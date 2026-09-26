@@ -55,13 +55,13 @@ export class MediaEngine extends EventTarget {
     // Avoid a speculative whole-file decode of long/larger media. Playback and live scopes remain available.
     const estimate=this.duration*(this.ctx.sampleRate)*2*4;
     if(file.size>160*1024*1024 || estimate>220*1024*1024) {
-      this.emit('analysisStatus','全体解析を省略（大容量）。再生とライブ解析は利用できます。');return;
+      this.emit('analysisStatus','全体解析を省略（大容量）。再生とライブ解析は利用できます。');this.emit('analysisUnavailable','容量上限でBPM解析を省略。TAPまたは手動入力を使ってください。');return;
     }
     this.emit('analysisStatus','音声をデコード中…');
     try {
       const bytes=await file.arrayBuffer();if(version!==this.version)return;
       const decoded=await this.ctx.decodeAudioData(bytes);if(version!==this.version)return;
-      if(decoded.length*decoded.numberOfChannels*4>240*1024*1024){this.emit('analysisStatus','全体解析を省略（PCM容量上限）。ライブ解析を利用できます。');return;}
+      if(decoded.length*decoded.numberOfChannels*4>240*1024*1024){this.emit('analysisStatus','全体解析を省略（PCM容量上限）。ライブ解析を利用できます。');this.emit('analysisUnavailable','PCM容量上限でBPM解析を省略。TAPまたは手動入力を使ってください。');return;}
       this.buffer=decoded;
       if(!isVideo) {
         const resume=this.playing;const t=this.media.currentTime;
@@ -74,12 +74,12 @@ export class MediaEngine extends EventTarget {
       this.worker.onmessage=({data})=>{
         if(version!==this.version)return;
         if(data.result){this.analysis=data.result;this.emit('analysis',data.result);this.worker.terminate();this.worker=null;}
-        else if(data.error){this.emit('analysisStatus','解析できませんでした。ライブ解析を利用できます。');this.worker.terminate();this.worker=null;}
-        else this.emit('analysisStatus',`波形解析 ${Math.round(data.progress*100)}%`);
+        else if(data.error){this.emit('analysisStatus','解析できませんでした。ライブ解析を利用できます。');this.emit('analysisUnavailable','BPM解析に失敗しました。ファイルを再度開くかTAPを使ってください。');this.worker.terminate();this.worker=null;}
+        else this.emit('analysisStatus',`${data.progress<.8?'波形':'BPM · 3エンジン'}解析 ${Math.round(data.progress*100)}%`);
       };
-      this.worker.onerror=()=>{if(version===this.version){this.emit('analysisStatus','全体解析に失敗しました。再生とライブ解析は利用できます。');this.worker?.terminate();this.worker=null;}};
+      this.worker.onerror=()=>{if(version===this.version){this.emit('analysisStatus','全体解析に失敗しました。再生とライブ解析は利用できます。');this.emit('analysisUnavailable','BPM解析に失敗しました。ファイルを再度開くかTAPを使ってください。');this.worker?.terminate();this.worker=null;}};
       this.worker.postMessage({channels,sampleRate:decoded.sampleRate},channels.map(c=>c.buffer));
-    }catch(error){if(version===this.version)this.emit('analysisStatus','この形式の全体解析は利用できません。再生可能な場合はライブ解析を利用できます。');}
+    }catch(error){if(version===this.version){this.emit('analysisStatus','この形式の全体解析は利用できません。再生可能な場合はライブ解析を利用できます。');this.emit('analysisUnavailable','この形式のBPM解析は利用できません。TAPまたは手動入力を使ってください。');}}
   }
   async play() {
     if(!this.file)return;

@@ -84,7 +84,8 @@ export class ScopeView{
       this.trace(ctx,w,h,this.right,C.high,n,offset);this.trace(ctx,w,h,this.left,C.mid,n,offset);
     }else{
       this.freq.fill(-100);if(e.playing)e.analyser?.getFloatFrequencyData(this.freq);
-      ctx.fillStyle=C.mid;for(let i=0;i<70;i++){const hz=20*Math.pow(1000,i/70),hz2=20*Math.pow(1000,(i+1)/70),sr=e.ctx?.sampleRate||48000;
+      for(let i=0;i<70;i++){const hz=20*Math.pow(1000,i/70),hz2=20*Math.pow(1000,(i+1)/70),sr=e.ctx?.sampleRate||48000;
+        const center=Math.sqrt(hz*hz2);ctx.fillStyle=center<250?C.low:center<4000?C.mid:C.high;
         const lo=Math.max(1,Math.floor(hz/sr*4096)),hi=Math.min(this.freq.length-1,Math.ceil(hz2/sr*4096));let value=-100;for(let j=lo;j<=hi;j++)value=Math.max(value,this.freq[j]);const amp=Math.max(0,(value+100)/100)*(h-22);ctx.fillRect(i/70*w,h-18-amp,Math.max(1,w/70-2),amp);}
       ctx.font='10px Consolas';ctx.fillStyle=C.muted;for(const hz of[20,100,1000,10000])ctx.fillText(hz>=1000?`${hz/1000}k`:hz,Math.log(hz/20)/Math.log(1000)*w+2,h-5);
     }

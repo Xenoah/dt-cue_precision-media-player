@@ -1,6 +1,6 @@
 {
   "name": "dt-cue-precision-media-player",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "private": true,
   "type": "module",
   "description": "Precision media player with 10 DJ pads, MIDI Learn, editable keyboard mappings, frame/ms seeking and audio analysis.",

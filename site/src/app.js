@@ -3,10 +3,12 @@ import {WaveView,ScopeView} from './views.js';
 import {frameSeek,formatTime,parseTime} from './analysis-core.js';
 import {DJ_DEFINITIONS,PAD_IDS,restoreKeys,keyLabel} from './control-map.js';
 import {PerformanceControls} from './dj-controls.js';
+import {TempoControls} from './tempo-controls.js';
 const $=id=>document.getElementById(id);
 const engine=new MediaEngine($('media'));
 const wave=new WaveView($('timeline'),$('overview'),engine);
 const scope=new ScopeView($('scope'),engine,$('monitorScope'));
+const tempo=new TempoControls({root:$('tempoDetection'),confidence:$('bpmConfidence'),apply:(bpm,offset)=>{wave.beatOffset=offset;setBpm(bpm,false);}});
 let files=[],current=null,unit='second',stepSize=1,fps=30,controls,toastTimer,drawTime=0,lastPosition=0;
 const definitions={
   toggle:['再生 / 一時停止','Space'],stop:['停止して先頭へ','KeyK'],start:['先頭へ','Home'],
@@ -107,7 +109,7 @@ function addFiles(input){
   renderFiles();load(files.find(f=>f.name===valid[0].name&&f.size===valid[0].size)||valid[0]);
 }
 function resetUI(){
-  wave.reset();$('zoom').value=1;$('zoomValue').textContent='1×';$('bpm').value='';$('bpmConfidence').textContent='解析後に表示';
+  wave.reset();$('zoom').value=1;$('zoomValue').textContent='1×';$('bpm').value='';tempo.reset();taps=[];
   $('filePeak').textContent=$('fileRms').textContent=$('sampleRate').textContent='—';$('waveEmpty').hidden=false;
   $('analysisStatus').textContent='音声を読み込み中…';$('waveEmpty').textContent='音声の波形を準備中…';
 }
@@ -133,7 +135,9 @@ function updateState(){
   $('loopButton').setAttribute('aria-pressed',engine.loop);$('muteButton').setAttribute('aria-pressed',engine.muted);$('muteButton').textContent=engine.muted?'MUTE':'VOL';
   $('aTime').textContent=short(engine.a);$('bTime').textContent=short(engine.b);
   $('liveStatus').textContent=engine.playing?'LIVE':'IDLE';$('liveStatus').classList.toggle('active',engine.playing);
-  $('scopeCaption').textContent=engine.playing?'出力信号 · ±1.0':scope.mode==='fft'?'再生中に表示':'現在位置のPCM · ±1.0';
+  $('scopeCaption').textContent=scope.mode==='fft'?'再生中に表示':engine.playing?'出力信号 · ±1.0':'現在位置のPCM · ±1.0';
+  $('scopeCaption').parentElement.hidden=scope.mode==='fft'&&engine.playing;
+  document.querySelectorAll('.scope-legend .color-left,.scope-legend .color-right').forEach(el=>el.hidden=scope.mode==='fft');
   if('mediaSession'in navigator){try{navigator.mediaSession.playbackState=engine.playing?'playing':'paused';}catch{}}
 }
 function updatePosition(){
@@ -145,7 +149,7 @@ function updatePosition(){
 }
 function setBpm(value,manual=true){
   value=Number(value);if(!Number.isFinite(value)||value<20||value>400){if(value!==0)toast('BPMは20〜400で入力してください。');return;}
-  wave.bpm=value;$('bpm').value=Math.round(value*10)/10;if(manual)$('bpmConfidence').textContent='手動設定';wave.draw();
+  wave.bpm=value;$('bpm').value=Math.round(value*10)/10;if(manual)tempo.markManual();wave.draw();
 }
 for(const id of['openButton','addButton','emptyOpen'])$(id).onclick=()=>$('fileInput').click();
 $('fileInput').onchange=e=>{addFiles(e.target.files);e.target.value='';};
@@ -162,21 +166,22 @@ $('timeInput').onchange=commitTime;$('timeInput').onkeydown=e=>{if(e.key==='Ente
 $('zoom').oninput=()=>{wave.setZoom(Number($('zoom').value));$('zoomValue').textContent=wave.zoom.toFixed(0)+'×';};
 $('fitButton').onclick=()=>{wave.setZoom(1);$('zoom').value=1;$('zoomValue').textContent='1×';};
 $('timeline').addEventListener('zoomchange',()=>{$('zoom').value=wave.zoom;$('zoomValue').textContent=wave.zoom.toFixed(1)+'×';});
+$('bpm').oninput=()=>{tempo.markManual();const value=Number($('bpm').value);if(value>=20&&value<=400){wave.bpm=value;wave.draw();}};
 $('bpm').onchange=()=>setBpm($('bpm').value);$('halfBpm').onclick=()=>setBpm(wave.bpm/2);$('doubleBpm').onclick=()=>setBpm(wave.bpm*2);
 $('gridButton').onclick=()=>{wave.grid=!wave.grid;$('gridButton').classList.toggle('selected',wave.grid);$('gridButton').setAttribute('aria-pressed',wave.grid);wave.draw();};
 let taps=[];$('tapButton').onclick=()=>{const now=performance.now();if(taps.length&&now-taps.at(-1)>2200)taps=[];taps.push(now);taps=taps.slice(-9);if(taps.length>1)setBpm(60000/((taps.at(-1)-taps[0])/(taps.length-1)));};
-document.querySelectorAll('[data-scope]').forEach(b=>b.onclick=()=>{scope.mode=b.dataset.scope;document.querySelectorAll('[data-scope]').forEach(x=>x.classList.toggle('selected',x===b));$('scopeWindow').disabled=scope.mode==='fft';updateState();scope.draw();});
+document.querySelectorAll('[data-scope]').forEach(b=>b.onclick=()=>{scope.mode=b.dataset.scope;document.querySelectorAll('[data-scope]').forEach(x=>x.classList.toggle('selected',x===b));$('scopeWindow').hidden=scope.mode==='fft';$('fftLegend').hidden=scope.mode!=='fft';$('scope').setAttribute('aria-label',scope.mode==='fft'?'FFT周波数スペクトル。LOWは橙、MIDは水色、HIGHは紫':'ステレオ音声のオシロスコープ');updateState();scope.draw();});
 $('scopeWindow').onchange=()=>{scope.window=Number($('scopeWindow').value);scope.draw();};
 $('pipButton').onclick=async()=>{try{if(document.pictureInPictureElement)await document.exitPictureInPicture();else await engine.media.requestPictureInPicture();}catch{toast('この動画では小窓表示を利用できません。');}};
 $('fullscreenButton').onclick=async()=>{try{if(document.fullscreenElement)await document.exitFullscreen();else await $('monitor').requestFullscreen();}catch{toast('この環境では全画面表示を利用できません。');}};
 $('monitor').addEventListener('dblclick',e=>{if(!e.target.closest('button'))$('fullscreenButton').click();});
 engine.addEventListener('reset',resetUI);engine.addEventListener('state',updateState);engine.addEventListener('metadata',updateMetadata);engine.addEventListener('position',updatePosition);
 engine.addEventListener('error',e=>toast(e.detail));engine.addEventListener('analysisStatus',e=>{$('analysisStatus').textContent=e.detail;$('waveEmpty').textContent=e.detail;});
+engine.addEventListener('analysisUnavailable',({detail:reason})=>tempo.unavailable(reason));
 engine.addEventListener('analysis',({detail:d})=>{
   $('waveEmpty').hidden=true;$('filePeak').textContent=db(d.samplePeak);$('fileRms').textContent=db(d.rms);
   $('analysisStatus').textContent='LOW <250 Hz · MID 250–4k Hz · HIGH >4k Hz';
-  if(d.bpm){setBpm(d.bpm,false);wave.beatOffset=d.beatOffset;$('bpmConfidence').textContent=`推定 · リズム一致 ${Math.round(d.confidence*100)}%（目安）`;}
-  else $('bpmConfidence').textContent='推定できません。TAPまたは手動入力';
+  tempo.show(d);
   wave.draw();scope.draw();
 });
 function refreshShortcutHints(){

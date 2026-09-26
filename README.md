@@ -28,8 +28,8 @@
 - MIDI入力（Note / CC）、MIDI Learn、入力機器の選択・抜き差し検出
 - 1／2／4／8ビートループ、1ビート移動、速度±1%、音量／速度のMIDI CC操作
 - LOW／MID／HIGHの3バンド波形、全体波形、ズーム、スクラブ
-- BPM推定、手入力、タップテンポ、倍／半分の補正、参考ビート線
-- ステレオのオシロスコープ、FFT、ライブピーク、ファイル全体のRMS／サンプルピーク
+- 3エンジンのBPM推定（発音間隔／自己相関／周期グリッド）、自動統合と候補選択、手入力、TAP、倍／半分の補正
+- ステレオのオシロスコープ、タイムラインと同じ3色のFFT、ライブピーク、ファイル全体のRMS／サンプルピーク
 - 動画の全画面・Picture-in-Picture（ブラウザ対応時）
 - DAW操作中のグローバルキー用Chrome／Edge拡張を同梱
 
@@ -135,7 +135,7 @@ npm start
 | Ctrl + Shift + 9 | 選択単位で進む |
 | Ctrl + Shift + 0 | 停止して先頭へ |
 
-その他の操作とパッド1〜10も拡張のショートカット設定で割り当て可能です。パッドはWeb側で選んだ操作を実行します。v0.1.0から更新する場合、拡張もv0.2.0へ更新し、対象タブへ再接続してください。Web画面内のキー設定とは別の設定です。Chromeの仕様により、既定で提案できるキーは4つまで。OS予約キー・他拡張・DAWと競合する場合は別の組み合わせに変更します。キーの取りこぼしを避けるため、非アクティブ時の連打ではデコード完了を待ってください。
+その他の操作とパッド1〜10も拡張のショートカット設定で割り当て可能です。パッドはWeb側で選んだ操作を実行します。v0.1.0から更新する場合、拡張も同梱版へ更新し、対象タブへ再接続してください。Web画面内のキー設定とは別の設定です。Chromeの仕様により、既定で提案できるキーは4つまで。OS予約キー・他拡張・DAWと競合する場合は別の組み合わせに変更します。キーの取りこぼしを避けるため、非アクティブ時の連打ではデコード完了を待ってください。
 
 - Chrome／Edgeを起動し、対象タブを開いたまま使用します。タブの破棄・スリープ・ブラウザ終了時は利用できません。
 - タブの再読み込み・移動後は拡張アイコンを押して再接続します。
@@ -174,13 +174,25 @@ npm start
 - **ループ**：PCM音声は音声レンダリング時計上のループ。動画はcurrentTimeを戻す方式なので、遅延・隙間が生じます。バックグラウンドのタイマー制限は特に動画の短区間ループへ影響します。
 - **速度**：PCMでは速度に応じて音程も変化します。高品質なタイムストレッチは未実装です。
 
+### BPMの検出結果を選ぶ
+
+1. ファイルを開くと3方式で解析し、**自動統合**したBPMを適用します。
+2. インスペクターに各方式の第一候補を表示。方式のボタンを押すと、その推定値を採用します。
+3. **BPMの候補**から、その方式の別候補（最大5件）へ切り替えられます。自動統合にも別候補があります。
+4. 選んだBPMと推定位相をビート線へ反映。1ビート移動やビートループも選択したBPMを使います。
+5. TAP・直接入力・÷2・×2で補正できます。解析待ちに手動入力した値は、解析完了後も維持します。ファイルを開き直すと解析し直します。
+
+「第一候補 N/3一致」は自動統合した値の付近を第一候補とした方式数です。候補欄の「N方式」は別候補も含む支持数で、多少の推定誤差を許容します。全方式が検出できない場合は理由を表示します。容量上限や非対応形式でPCM解析自体を省略した場合も、テンポ欄に表示します。
+
+![BPM engines and matching FFT colors](docs/dt-cue-analysis.jpg)
+
 ### 解析表示
 
 - **3バンド波形**：250Hz／4kHzの一次相補フィルターによる帯域別RMS。全帯域ピークを外形として色の割合を描画します。DJソフトの見え方を参考にした独自実装で、特定製品と同一のアルゴリズムではありません。クロスオーバーは緩やかで帯域は重なります。
-- **BPM**：オンセット包絡と発音間隔から推定。リズムが弱い信号は未推定とし、推定値には倍／半分の曖昧さがあります。信頼度に見えるパーセントは推定ビートへの一致割合で、統計的な正答確率ではありません。可変テンポの追従・拍子推定・曲全体に渡る厳密なビートグリッドはありません。
+- **BPM**：発音間隔（IOIヒストグラム）、音量包絡の自己相関（ACF）、発音の周期グリッド一致（位相折り畳み）の3方式を実行。ブラウザ内で動く独自JavaScript実装です。音量に対する固定しきい値を廃止し、局所的な音量で正規化。4秒以上の音声を40〜240 BPMで探索します。24秒ずつ最大8区間を曲中に分散させて解析し、候補の重み付き投票と中央値で統合します。内部スコアは経験的な指標で、正答確率ではありません。倍／半分の曖昧さ、可変テンポ、スウィング等による誤差は残ります。拍子推定や可変テンポ追従はありません。
 - **ビート線**：推定BPMと検出した発音から作る参考線です。先頭無音やスウィングでずれる場合があります。
 - **オシロ**：再生中は音量調整後のL/R出力。停止中は現在位置からのPCM断片を表示。再生中は簡易の立ち上がりトリガーを使います。
-- **FFT**：再生中の音量調整後信号。20Hz〜20kHzを対数軸で表示。
+- **FFT**：再生中の音量調整後信号。20Hz〜20kHzを対数軸で表示。棒の中心周波数でLOW（250Hz未満・橙）、MID（250Hz〜4kHz未満・水色）、HIGH（4kHz以上・紫）に色分けし、タイムラインと同じ配色を使います。
 - **FILE PEAK / FILE RMS**：デコード後PCMの全体サンプルピーク／RMS（dBFS）。LUFS・True Peakではありません。リサンプリングでサンプル値が0dBFSを超えることがあります。
 - **PCM欄**：ブラウザがデコード／リサンプリングしたPCMのレートとチャンネル数。ファイルの元のレートと異なる場合があります。出力・ライブオシロはWeb Audioのステレオミックスです。
 
@@ -190,7 +202,7 @@ MP4／WebM／WAV／MP3など、実際に使える形式はブラウザのコー�
 
 ## 検証
 
-v0.2.0は自動テスト22件。MIDIは模擬入力で受信経路・学習・機器切断・権限拒否を検証しています。
+v0.3.0は自動テスト29件。MIDIは模擬入力で受信経路・学習・機器切断・権限拒否を検証しています。
 
 ```sh
 npm test
@@ -206,6 +218,7 @@ DSP・シーク境界・非同期再生・PCMループ・試聴スケジュー�
 site/              GitHub Pagesに配信するアプリ
   src/engine.js    PCM / メディア再生エンジン
   src/analysis-*   音声解析とWorker
+  src/tempo*.js    BPMの3方式・候補統合・選択UI
   src/views.js     波形・スコープ描画
   src/app.js       UI・設定・キーボード制御
 extension/         Chrome / Edgeの補助拡張
@@ -217,6 +230,7 @@ tools/serve.mjs    ローカル確認用サーバー
 
 ## 技術資料
 
+- [DAFx: real-time beat tracking and tempo induction](https://dafx.de/paper-archive/2009/papers/paper_65.pdf)
 - [Web MIDI API specification](https://www.w3.org/TR/webmidi/)
 - [Chrome: Web MIDI permission](https://developer.chrome.com/blog/web-midi-permission-prompt)
 - [Chrome Extensions: Commands API](https://developer.chrome.com/docs/extensions/reference/api/commands)
@@ -234,3 +248,5 @@ Run `npm start`, then open `http://localhost:4173/`. Import the `extension/` fol
 Audio uses decoded PCM where available. Video frame steps are FPS-based time seeks, not guaranteed frame-accurate decoding for VFR footage. BPM is an estimate, PCM rate may differ from the original source, large files may skip offline analysis, and global OS/DAW operation still requires real-device verification. No media is uploaded.
 
 Version 0.2.0 adds ten customizable performance pads, file-scoped session HOT CUEs, pencil-based keyboard/MIDI editing, MIDI Learn for Note/CC, beat loops and pitch-rate controls. Click MIDI to enable access, then pencil → target → MIDI Learn. MIDI bindings include port/channel/message type/number; absolute CC can control volume and rate. No SysEx, MIDI output, clock sync or relative encoders. Real MIDI hardware and DAW coexistence remain unverified.
+
+Version 0.3.0 adds three local tempo estimators (inter-onset intervals, envelope autocorrelation, and phase-folded pulse grids), weighted consensus, selectable alternatives, and LOW/MID/HIGH colors shared by the FFT and timeline. Quiet and soft-attack signals are normalized locally; silence, isolated accents and aperiodic signals can remain undetected. Manual BPM is preserved if analysis finishes later.

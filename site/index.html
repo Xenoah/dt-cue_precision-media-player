@@ -43,7 +43,12 @@
         <div class="divider"></div><div class="section-label">テンポ <span class="muted">推定 / 手動</span></div>
         <div class="bpm-row"><input id="bpm" type="number" min="20" max="400" step=".1" placeholder="—" aria-label="BPM"><span>BPM</span><button id="tapButton">TAP</button></div>
         <div class="tempo-actions"><button id="halfBpm">÷ 2</button><button id="doubleBpm">× 2</button><button id="gridButton" class="selected" aria-pressed="true">ビート線</button></div>
-        <span class="micro" id="bpmConfidence">解析後に表示</span>
+        <div id="tempoDetection" class="tempo-detection" aria-label="BPM検出エンジン">
+          <div class="tempo-detection-head"><button id="tempoAuto" aria-pressed="false" disabled>自動統合</button><span id="tempoSummary">3エンジン</span></div>
+          <div id="tempoEngines" class="tempo-engines"></div>
+          <select id="tempoCandidate" aria-label="BPMの候補" disabled><option>音声の解析を待機</option></select>
+        </div>
+        <span class="micro" id="bpmConfidence" role="status">解析後に表示</span>
         <div class="divider"></div>
         <div class="field-row"><label for="speed">再生速度</label><select id="speed"><option value=".25">0.25×</option><option value=".5">0.5×</option><option value=".75">0.75×</option><option value="1" selected>1.00×</option><option value="1.25">1.25×</option><option value="1.5">1.5×</option><option value="2">2.00×</option></select></div>
         <p class="micro" id="rateNote">音声PCM再生では速度に応じて音程も変わります。</p>
@@ -51,7 +56,7 @@
     </section>
     <section class="panel analysis-panel" aria-label="音声解析">
       <div class="panel-head"><h2>音声解析</h2><div class="spacer"></div><span class="live-label" id="liveStatus">IDLE</span></div>
-      <div class="scope-toolbar"><div class="segmented"><button data-scope="osc" class="selected">オシロ</button><button data-scope="fft">FFT</button></div><select id="scopeWindow" aria-label="オシロの時間幅"><option value=".005">5 ms</option><option value=".02" selected>20 ms</option><option value=".05">50 ms</option></select></div>
+      <div class="scope-toolbar"><div class="segmented"><button data-scope="osc" class="selected">オシロ</button><button data-scope="fft">FFT</button></div><select id="scopeWindow" aria-label="オシロの時間幅"><option value=".005">5 ms</option><option value=".02" selected>20 ms</option><option value=".05">50 ms</option></select><div id="fftLegend" class="wave-legend fft-legend" hidden title="LOW: 250 Hz未満 / MID: 250–4k Hz / HIGH: 4k Hz以上"><span class="low">LOW</span><span class="mid">MID</span><span class="high">HIGH</span></div></div>
       <div class="scope-wrap"><canvas id="scope" aria-label="ステレオ音声のオシロスコープ"></canvas><div class="scope-legend"><span class="color-left">L</span><span class="color-right">R</span><span id="scopeCaption">出力信号 · ±1.0</span></div></div>
       <div class="meter-row"><span>L</span><div class="meter"><i id="meterL"></i></div><span>R</span><div class="meter"><i id="meterR"></i></div><span id="livePeak" class="mono">−∞ dB</span></div>
       <div class="analysis-stats"><span>FILE PEAK<strong id="filePeak">—</strong></span><span>FILE RMS<strong id="fileRms">—</strong></span><span>PCM<strong id="sampleRate">—</strong></span></div>
