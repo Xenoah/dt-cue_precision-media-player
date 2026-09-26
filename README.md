@@ -4,7 +4,7 @@
 
 *dt*（時間の微分・微小な時間）と、DJの **CUE** を組み合わせた名前です。
 
-[リリースとダウンロード](https://github.com/Xenoah/dt-cue_precision-media-player/releases) · [GitHub Pages（有効化後）](https://xenoah.github.io/dt-cue_precision-media-player/)
+[リリースとダウンロード](https://github.com/Xenoah/dt-cue_precision-media-player/releases) · [プレイヤーを開く](https://xenoah.github.io/dt-cue_precision-media-player/)
 
 ![dt-cue — Premiere layout](docs/dt-cue-preview.jpg)
 
@@ -56,9 +56,14 @@ npm start
 
 ## GitHub Pagesに公開
 
-このリポジトリの `site/` が公開対象です。初回のPages有効化後はmainへのpushでテストとデプロイを実行します。未有効化時はデプロイをスキップし、Actionsの実行概要へ設定手順を表示します。アプリはビルド不要で、リポジトリのサブパスにも対応します。
+アプリ本体は `site/` にあります。アプリはビルド不要で、リポジトリのサブパスにも対応します。公開URLは [GitHub Pages](https://xenoah.github.io/dt-cue_precision-media-player/) です。
 
-初期設定は **Settings → Pages → Build and deployment → Source → GitHub Actions**。公開URLは [GitHub Pages](https://xenoah.github.io/dt-cue_precision-media-player/) です。
+**Settings → Pages → Build and deployment → Source** では、どちらの公開方式も使えます。
+
+- **GitHub Actions**：mainへのpushでテスト後、`site/` の内容をサイト直下へ公開します。
+- **Deploy from a branch → main → / (root)**：GitHubの標準デプロイで公開し、ルートの `index.html` から `site/` へ移動してプレイヤーを開きます。カスタムワークフローはテストだけを実行し、二重デプロイを避けます。
+
+未有効化時はデプロイをスキップし、Actionsの実行概要へ設定手順を表示します。GitHub Actions方式へ切り替えた場合は、`Deploy dt-cue to GitHub Pages` を手動実行するかmainへpushしてください。
 
 ソースを取得する場合：
 
