@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="ja" data-dtcue="1" data-layout="premiere">
+<head>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="動画と音声を秒・フレーム・1msで確認。3バンド波形とオシロスコープを備えるローカルファイルプレイヤー。">
+  <meta name="color-scheme" content="dark"><meta name="theme-color" content="#111518">
+  <title>dt-cue — Precision Media Player</title>
+  <link rel="icon" href="./favicon.svg" type="image/svg+xml"><link rel="stylesheet" href="./style.css">
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="./" aria-label="dt-cue ホーム"><svg viewBox="0 0 32 32" aria-hidden="true"><path d="M3 17h5l3-10 5 20 5-22 4 12h4"/></svg><strong>dt<span>-cue</span></strong><small>PRECISION MEDIA PLAYER</small></a>
+    <div class="layouts" role="group" aria-label="ウィンドウ配置"><span class="label">配置</span><button data-layout="aviutl">AviUtl</button><button data-layout="ae">After Effects</button><button data-layout="premiere" class="selected">Premiere</button></div>
+    <div class="top-actions"><button id="keysButton" class="subtle">キー設定</button><button id="remoteButton" class="subtle"><span id="remoteDot" class="dot"></span>DAW操作</button><button id="openButton" class="primary">＋ ファイルを開く</button></div>
+  </header>
+  <input id="fileInput" type="file" accept="audio/*,video/*,.mkv,.avi,.flac,.aiff,.aif" multiple hidden>
+  <main class="workspace">
+    <section class="panel library-panel" aria-label="メディア一覧">
+      <div class="panel-head"><h2>メディア</h2><span id="fileCount" class="counter">0</span><button id="addButton" class="icon-button" aria-label="ファイルを追加">＋</button></div>
+      <div id="fileList" class="file-list"><div class="library-empty"><svg viewBox="0 0 40 40" aria-hidden="true"><rect x="8" y="5" width="24" height="30" rx="3"/><path d="m17 15 9 5-9 5z"/></svg><p>リファレンスを追加</p><small>動画・音声をドロップ</small></div></div>
+      <div class="library-bottom"><button id="demoButton" class="wide">デモ音源で試す <span>↗</span></button><p>ファイルは端末内で処理されます。</p></div>
+    </section>
+    <section class="panel monitor-panel" aria-label="プレビュー">
+      <div class="panel-head"><h2>プレビュー</h2><span id="mediaKind" class="tag">NO MEDIA</span><div class="spacer"></div><button id="pipButton" class="icon-button" aria-label="ピクチャーインピクチャー" title="動画を小窓で表示">▣</button><button id="fullscreenButton" class="icon-button" aria-label="プレビューを全画面表示">⛶</button></div>
+      <div id="monitor" class="monitor">
+        <video id="media" playsinline preload="metadata"></video>
+        <canvas id="monitorScope" aria-label="音声プレビュー波形"></canvas>
+        <div id="emptyMonitor" class="empty-monitor"><span class="eyebrow">YOUR NEXT REFERENCE</span><h1>音の一瞬まで、見える。</h1><p>動画・音楽ファイルをここにドロップ</p><button id="emptyOpen" class="primary">ファイルを選ぶ</button><small>MP4 / WebM / MOV / WAV / MP3 / FLAC ほか</small></div>
+        <div id="audioTitle" class="audio-title" hidden><span class="eyebrow">AUDIO REFERENCE</span><strong id="trackName"></strong><span id="trackInfo"></span></div>
+        <div id="monitorOverlay" class="monitor-overlay" hidden><span id="resolution"></span><span id="monitorTime">00:00:00.000</span></div>
+      </div>
+      <div class="monitor-bottom"><span id="currentFile">ファイル未選択</span><span id="playbackEngine">LOCAL FILE</span></div>
+    </section>
+    <section class="panel inspector-panel" aria-label="再生設定">
+      <div class="panel-head"><h2>インスペクター</h2><span class="tag">PRECISION</span></div>
+      <div class="inspector-content">
+        <div class="section-label">シークの刻み</div>
+        <div class="segmented" role="group" aria-label="シーク単位"><button data-unit="second" class="selected">秒</button><button data-unit="frame">フレーム</button><button data-unit="ms">1 ms</button></div>
+        <div class="field-row"><label for="stepSize">移動量</label><div class="input-unit"><input id="stepSize" type="number" min="1" max="10000" value="1" step="1"><span id="stepUnit">秒</span></div></div>
+        <div class="field-row"><label for="fps">フレームレート</label><select id="fps"><option value="23.976023976">23.976</option><option value="24">24</option><option value="25">25</option><option value="29.97002997">29.97</option><option value="30" selected>30</option><option value="50">50</option><option value="59.94005994">59.94</option><option value="60">60</option><option value="120">120</option></select><span class="muted">fps</span></div>
+        <p class="micro" id="precisionNote">1 ms = 1/1000秒。動画は指定FPS基準です。</p>
+        <div class="divider"></div><div class="section-label">テンポ <span class="muted">推定 / 手動</span></div>
+        <div class="bpm-row"><input id="bpm" type="number" min="20" max="400" step=".1" placeholder="—" aria-label="BPM"><span>BPM</span><button id="tapButton">TAP</button></div>
+        <div class="tempo-actions"><button id="halfBpm">÷ 2</button><button id="doubleBpm">× 2</button><button id="gridButton" class="selected" aria-pressed="true">ビート線</button></div>
+        <span class="micro" id="bpmConfidence">解析後に表示</span>
+        <div class="divider"></div>
+        <div class="field-row"><label for="speed">再生速度</label><select id="speed"><option value=".25">0.25×</option><option value=".5">0.5×</option><option value=".75">0.75×</option><option value="1" selected>1.00×</option><option value="1.25">1.25×</option><option value="1.5">1.5×</option><option value="2">2.00×</option></select></div>
+        <p class="micro" id="rateNote">音声PCM再生では速度に応じて音程も変わります。</p>
+      </div>
+    </section>
+    <section class="panel analysis-panel" aria-label="音声解析">
+      <div class="panel-head"><h2>音声解析</h2><div class="spacer"></div><span class="live-label" id="liveStatus">IDLE</span></div>
+      <div class="scope-toolbar"><div class="segmented"><button data-scope="osc" class="selected">オシロ</button><button data-scope="fft">FFT</button></div><select id="scopeWindow" aria-label="オシロの時間幅"><option value=".005">5 ms</option><option value=".02" selected>20 ms</option><option value=".05">50 ms</option></select></div>
+      <div class="scope-wrap"><canvas id="scope" aria-label="ステレオ音声のオシロスコープ"></canvas><div class="scope-legend"><span class="color-left">L</span><span class="color-right">R</span><span id="scopeCaption">出力信号 · ±1.0</span></div></div>
+      <div class="meter-row"><span>L</span><div class="meter"><i id="meterL"></i></div><span>R</span><div class="meter"><i id="meterR"></i></div><span id="livePeak" class="mono">−∞ dB</span></div>
+      <div class="analysis-stats"><span>FILE PEAK<strong id="filePeak">—</strong></span><span>FILE RMS<strong id="fileRms">—</strong></span><span>PCM<strong id="sampleRate">—</strong></span></div>
+    </section>
+    <section class="panel timeline-panel" aria-label="波形タイムライン">
+      <div class="panel-head"><h2>タイムライン</h2><span class="tag">3 BAND</span><div class="wave-legend"><span class="low">LOW</span><span class="mid">MID</span><span class="high">HIGH</span></div><div class="spacer"></div><label class="zoom-label" for="zoom">拡大</label><input id="zoom" type="range" min="1" max="64" value="1" step="1" aria-label="波形の拡大率"><button id="fitButton" class="small-button">全体</button></div>
+      <div class="timeline-wrap"><canvas id="timeline" role="slider" tabindex="0" aria-label="再生位置。左右キーで選択単位ずつシーク" aria-valuemin="0" aria-valuemax="0" aria-valuenow="0"></canvas><div id="waveEmpty" class="wave-empty">音声を読み込むと、帯域ごとの波形を表示します。</div></div>
+      <div class="overview-wrap"><canvas id="overview" aria-label="全体波形。クリックして表示位置を移動"></canvas></div>
+      <div class="timeline-bottom"><span id="analysisStatus">LOW &lt;250 Hz · MID 250–4k Hz · HIGH &gt;4k Hz</span><span id="zoomValue">1×</span></div>
+    </section>
+  </main>
+  <footer class="transport">
+    <div class="time-block"><input id="timeInput" value="00:00:00.000" aria-label="現在位置。秒数または時分秒を入力"><div><span id="frameCounter">000000 f</span><span class="muted">/ <span id="duration">00:00:00.000</span></span></div></div>
+    <div class="transport-center"><div class="transport-buttons"><button data-action="start" aria-label="先頭へ" title="先頭へ (Home)">|◀</button><button data-action="step-back" aria-label="選択単位で戻る" title="選択単位で戻る (←)">◀|</button><button data-action="toggle" id="playButton" class="play-button" aria-label="再生" title="再生 / 一時停止 (Space)"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m8 5 11 7-11 7z"/></svg></button><button data-action="step-forward" aria-label="選択単位で進む" title="選択単位で進む (→)">|▶</button><button data-action="stop" aria-label="停止" title="停止 (K)">■</button></div><div class="step-summary" id="stepSummary">← / → &nbsp; 1 秒</div></div>
+    <div class="loop-controls"><div><button id="setA" title="ループ開始 (I)">A</button><span id="aTime">00:00.000</span><button id="setB" title="ループ終了 (O)">B</button><span id="bTime">00:00.000</span></div><button id="loopButton" aria-pressed="false">↻ A–Bループ</button><button id="auditionButton" title="現在位置から0.5秒試聴 (Enter)">0.5秒試聴</button></div>
+    <div class="volume-controls"><button id="muteButton" aria-label="ミュート" aria-pressed="false">VOL</button><input id="volume" type="range" min="0" max="100" value="80" aria-label="音量"><span id="volumeValue">80%</span></div>
+  </footer>
+  <div id="dropOverlay" class="drop-overlay" hidden>動画・音声ファイルをドロップ</div><div id="toast" role="status" class="toast" hidden></div>
+  <dialog id="keysDialog"><div class="dialog-head"><h2>キー割り当て</h2><button data-close="keysDialog" aria-label="閉じる">×</button></div><p>変更したい操作を選び、キーを押してください。Escでキャンセル、Backspaceで解除。設定はこのブラウザに保存されます。</p><div id="keyList" class="key-list"></div><div class="dialog-footer"><button id="resetKeys">初期設定に戻す</button><button data-close="keysDialog" class="primary">完了</button></div></dialog>
+  <dialog id="remoteDialog"><div class="dialog-head"><h2>DAWを操作しながら使う</h2><button data-close="remoteDialog" aria-label="閉じる">×</button></div><p id="remoteStatus">補助拡張は未接続です。</p><ol><li>配布ZIPの <code>extension</code> フォルダーを展開。</li><li>Chrome / Edgeの拡張機能ページで「デベロッパーモード」をオンにし、「パッケージ化されていない拡張機能を読み込む」から選択。</li><li>dt-cueを開き、拡張アイコンをクリックして、このタブを接続。</li><li>拡張の「キー設定」で各操作を割り当て、適用範囲を「グローバル」に設定。</li><li>ここで一度再生し、DAWへ切り替え。</li></ol><div class="shortcut-guide"><span>Ctrl + Shift + 7</span><span>再生 / 一時停止</span><span>Ctrl + Shift + 8</span><span>選択単位で戻る</span><span>Ctrl + Shift + 9</span><span>選択単位で進む</span><span>Ctrl + Shift + 0</span><span>停止</span></div><p class="micro">ブラウザと対象タブを開いたまま使用してください。OS予約キーやDAWとの競合は別の組み合わせに変更。Webページ内のキー設定とグローバル設定は別です。メディアキー操作も対応環境で利用できます。</p><a href="./dtcue-extension.zip" download class="button-link">補助拡張をダウンロード</a><div class="dialog-footer"><button data-close="remoteDialog" class="primary">閉じる</button></div></dialog>
+  <script type="module" src="./src/app.js"></script>
+</body></html>
