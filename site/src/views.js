@@ -1,3 +1,4 @@
+import {PAD_COLORS} from './control-map.js';
 const C={grid:'#27343e',muted:'#78909f',accent:'#c3f96b',low:'#fdac64',mid:'#59c6da',high:'#b49cff'};
 function setup(canvas){
   const r=canvas.getBoundingClientRect(),dpr=Math.min(2,devicePixelRatio||1);
@@ -24,7 +25,7 @@ export class WaveView{
     this.resize=new ResizeObserver(()=>this.draw());this.resize.observe(canvas);this.resize.observe(overview);
   }
   get span(){return (this.engine.duration||30)/this.zoom;}
-  setZoom(zoom){this.zoom=zoom;this.start=Math.max(0,Math.min(this.engine.duration-this.span,this.engine.currentTime-this.span/2));this.draw();}
+  setZoom(zoom){this.zoom=Math.max(1,Math.min(64,Number(zoom)||1));this.start=Math.max(0,Math.min(this.engine.duration-this.span,this.engine.currentTime-this.span/2));this.draw();}
   reset(){this.zoom=1;this.start=0;this.bpm=0;this.beatOffset=0;this.draw();}
   follow(force=false){const t=this.engine.currentTime;if((force||this.engine.playing)&&!this.scrubbing&&(t>this.start+this.span||t<this.start))this.start=Math.max(0,Math.min(this.engine.duration-this.span,t-this.span*.15));}
   draw(){
@@ -52,6 +53,7 @@ export class WaveView{
       }
     }
     if(this.engine.duration){
+      (this.cuePoints?.()||[]).forEach((t,i)=>{if(t===null||t<this.start||t>this.start+span)return;const px=x(t);ctx.fillStyle=PAD_COLORS[i];ctx.globalAlpha=.7;ctx.fillRect(px,24,1,h-24);ctx.globalAlpha=1;ctx.fillRect(Math.min(w-20,Math.max(0,px)),25,19,15);ctx.fillStyle='#111820';ctx.fillText(String(i+1),Math.min(w-17,Math.max(3,px+3)),36);});
       for(const [label,t]of[['A',this.engine.a],['B',this.engine.b]]){if(t>=this.start&&t<=this.start+span){ctx.fillStyle='#c3f96b';ctx.globalAlpha=.65;ctx.fillRect(x(t),24,1,h-24);ctx.fillText(label,Math.min(w-12,Math.max(2,x(t)+3)),h-7);ctx.globalAlpha=1;}}
       const px=x(this.engine.currentTime);ctx.fillStyle=C.accent;ctx.fillRect(px-1,22,2,h-22);ctx.beginPath();ctx.moveTo(px-5,23);ctx.lineTo(px+5,23);ctx.lineTo(px,29);ctx.fill();
     }

@@ -34,4 +34,8 @@ test('content bridge accepts only extension messages while connected',async()=>{
   listener({type:'dtcue-command',command:'ms-forward'},{id:'test-id'},()=>{});assert.deepEqual(events,['ms-forward']);
   listener({type:'dtcue-disconnect'},{id:'test-id'},()=>{});
   listener({type:'dtcue-command',command:'stop'},{id:'test-id'},()=>{});assert.equal(events.length,1);
+  listener({type:'dtcue-connect'},{id:'test-id'},()=>{});
+  listener({type:'dtcue-command',command:'pad-10'},{id:'test-id'},()=>{});
+  listener({type:'dtcue-command',command:'pad-11'},{id:'test-id'},()=>{});
+  assert.deepEqual(events,['ms-forward','pad-10']);
 });

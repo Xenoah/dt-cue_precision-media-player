@@ -1,9 +1,9 @@
 {
   "name": "dt-cue-precision-media-player",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": true,
   "type": "module",
-  "description": "Precision audio/video reference player with frame and millisecond seeking, 3-band waveforms, and global controls.",
+  "description": "Precision media player with 10 DJ pads, MIDI Learn, editable keyboard mappings, frame/ms seeking and audio analysis.",
   "scripts": {
     "package": "python3 tools/package.py",
     "dev": "node tools/serve.mjs",

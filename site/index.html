@@ -2,17 +2,18 @@
 <html lang="ja" data-dtcue="1" data-layout="premiere">
 <head>
   <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="動画と音声を秒・フレーム・1msで確認。3バンド波形とオシロスコープを備えるローカルファイルプレイヤー。">
+  <meta name="description" content="動画と音声を秒・フレーム・1msで確認。10パッド・MIDI Learn・3バンド波形・オシロスコープを備えるローカルファイルプレイヤー。">
   <meta name="color-scheme" content="dark"><meta name="theme-color" content="#111518">
   <title>dt-cue — Precision Media Player</title>
-  <link rel="icon" href="./favicon.svg" type="image/svg+xml"><link rel="stylesheet" href="./style.css">
+  <link rel="icon" href="./favicon.svg" type="image/svg+xml"><link rel="stylesheet" href="./style.css"><link rel="stylesheet" href="./dj.css">
 </head>
 <body>
   <header class="topbar">
     <a class="brand" href="./" aria-label="dt-cue ホーム"><svg viewBox="0 0 32 32" aria-hidden="true"><path d="M3 17h5l3-10 5 20 5-22 4 12h4"/></svg><strong>dt<span>-cue</span></strong><small>PRECISION MEDIA PLAYER</small></a>
     <div class="layouts" role="group" aria-label="ウィンドウ配置"><span class="label">配置</span><button data-layout="aviutl">AviUtl</button><button data-layout="ae">After Effects</button><button data-layout="premiere" class="selected">Premiere</button></div>
-    <div class="top-actions"><button id="keysButton" class="subtle">キー設定</button><button id="remoteButton" class="subtle"><span id="remoteDot" class="dot"></span>DAW操作</button><button id="openButton" class="primary">＋ ファイルを開く</button></div>
+    <div class="top-actions"><button id="keysButton" class="subtle pencil-button" aria-label="キーマッピング編集" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m15 4 5 5M4 20l5-1L21 7a2 2 0 0 0-5-5L4 14z"/></svg><span>キー / MIDI</span></button><button id="midiButton" class="subtle"><span id="midiDot" class="dot"></span>MIDI <small id="midiCount">OFF</small></button><button id="remoteButton" class="subtle"><span id="remoteDot" class="dot"></span>DAW操作</button><button id="openButton" class="primary">＋ ファイルを開く</button></div>
   </header>
+  <div id="mappingBanner" class="mapping-banner" hidden><span><strong>✎ 割り当て編集中</strong> 点線の操作をクリックして、キー／MIDIを登録</span><button id="mappingList">割り当て一覧</button><button id="mappingDone" class="primary">完了</button></div>
   <input id="fileInput" type="file" accept="audio/*,video/*,.mkv,.avi,.flac,.aiff,.aif" multiple hidden>
   <main class="workspace">
     <section class="panel library-panel" aria-label="メディア一覧">
@@ -61,6 +62,11 @@
       <div class="overview-wrap"><canvas id="overview" aria-label="全体波形。クリックして表示位置を移動"></canvas></div>
       <div class="timeline-bottom"><span id="analysisStatus">LOW &lt;250 Hz · MID 250–4k Hz · HIGH &gt;4k Hz</span><span id="zoomValue">1×</span></div>
     </section>
+    <section class="panel performance-panel" aria-label="DJパッド">
+      <div class="panel-head"><h2>パッド</h2><span class="tag">10 HOT CUES / MIDI</span><div class="spacer"></div><div class="dj-tools"><button data-action="beat-back" aria-label="1ビート戻る">−1拍</button><button data-action="beat-forward" aria-label="1ビート進む">＋1拍</button><button data-action="loop-4">4拍 LOOP</button></div><button id="padRecord" class="small-button" aria-pressed="false">● 記録</button><button id="padEdit" class="icon-button" aria-label="パッドのキーマッピング編集" aria-pressed="false">✎</button></div>
+      <div id="padGrid" class="pad-grid" role="group" aria-label="10個のパフォーマンスパッド"></div>
+      <div class="pad-footer"><span id="padHint">空のCUEは記録、設定済みCUEは再生。右クリックまたは鉛筆で編集。</span><span class="muted">CUEはファイル別・セッション内</span></div>
+    </section>
   </main>
   <footer class="transport">
     <div class="time-block"><input id="timeInput" value="00:00:00.000" aria-label="現在位置。秒数または時分秒を入力"><div><span id="frameCounter">000000 f</span><span class="muted">/ <span id="duration">00:00:00.000</span></span></div></div>
@@ -69,7 +75,15 @@
     <div class="volume-controls"><button id="muteButton" aria-label="ミュート" aria-pressed="false">VOL</button><input id="volume" type="range" min="0" max="100" value="80" aria-label="音量"><span id="volumeValue">80%</span></div>
   </footer>
   <div id="dropOverlay" class="drop-overlay" hidden>動画・音声ファイルをドロップ</div><div id="toast" role="status" class="toast" hidden></div>
-  <dialog id="keysDialog"><div class="dialog-head"><h2>キー割り当て</h2><button data-close="keysDialog" aria-label="閉じる">×</button></div><p>変更したい操作を選び、キーを押してください。Escでキャンセル、Backspaceで解除。設定はこのブラウザに保存されます。</p><div id="keyList" class="key-list"></div><div class="dialog-footer"><button id="resetKeys">初期設定に戻す</button><button data-close="keysDialog" class="primary">完了</button></div></dialog>
+  <dialog id="keysDialog" aria-labelledby="keysTitle"><div class="dialog-head"><h2 id="keysTitle">キー / MIDI 割り当て一覧</h2><button data-close="keysDialog" aria-label="一覧を閉じる">×</button></div><input id="mappingSearch" class="mapping-search" type="search" placeholder="操作名で検索" aria-label="割り当てを検索"><div id="keyList" class="mapping-list"></div><div class="dialog-footer"><button id="resetKeys">キーを初期設定に戻す</button><button data-close="keysDialog" class="primary">完了</button></div></dialog>
+  <dialog id="mappingDialog" aria-labelledby="mappingTitle"><div class="dialog-head"><h2 id="mappingTitle">割り当てを編集</h2><button data-close="mappingDialog" aria-label="割り当て編集を閉じる">×</button></div>
+    <div id="padActionField" class="mapping-field"><label for="padAction">パッドの操作</label><select id="padAction"></select><button id="clearCue">このCUEを削除</button></div>
+    <div class="mapping-field"><span>キーボード</span><button id="mapKey" aria-label="キーを登録">未設定</button><button id="clearKey">キーを解除</button></div>
+    <div class="mapping-field"><span>MIDI入力</span><button id="mapMidi">MIDI Learn</button><button id="clearMidi">MIDIを解除</button></div><p id="midiBinding" class="midi-binding">未設定</p>
+    <p id="mappingMessage" class="mapping-message" role="status"></p><button id="mapReassign" hidden>移動して割り当て</button><p id="mappingNote" class="micro"></p>
+    <div class="dialog-footer"><span class="micro">変更は自動保存</span><button data-close="mappingDialog" class="primary">完了</button></div>
+  </dialog>
+  <dialog id="midiDialog" aria-labelledby="midiTitle"><div class="dialog-head"><h2 id="midiTitle">MIDIコントローラー</h2><button data-close="midiDialog" aria-label="MIDI設定を閉じる">×</button></div><p id="midiStatus" role="status"></p><div class="midi-connect"><button id="midiEnable" class="primary">MIDIを有効にする</button><button id="midiDisable">MIDIを切断</button></div><label class="mapping-field" for="midiInput">使用する入力<select id="midiInput"><option value="">すべての入力</option></select></label><ul id="midiDevices"></ul><div class="midi-monitor"><span class="eyebrow">LAST INPUT</span><output id="lastMidi">入力待ち</output></div><p class="micro">接続後、鉛筆 → 操作を選択 → MIDI Learn → 機器を操作。NoteとCCに対応します。DAW併用時はMIDI機器を共有できる設定が必要な場合があります。</p><div class="dialog-footer"><button data-close="midiDialog" class="primary">閉じる</button></div></dialog>
   <dialog id="remoteDialog"><div class="dialog-head"><h2>DAWを操作しながら使う</h2><button data-close="remoteDialog" aria-label="閉じる">×</button></div><p id="remoteStatus">補助拡張は未接続です。</p><ol><li>配布ZIPの <code>extension</code> フォルダーを展開。</li><li>Chrome / Edgeの拡張機能ページで「デベロッパーモード」をオンにし、「パッケージ化されていない拡張機能を読み込む」から選択。</li><li>dt-cueを開き、拡張アイコンをクリックして、このタブを接続。</li><li>拡張の「キー設定」で各操作を割り当て、適用範囲を「グローバル」に設定。</li><li>ここで一度再生し、DAWへ切り替え。</li></ol><div class="shortcut-guide"><span>Ctrl + Shift + 7</span><span>再生 / 一時停止</span><span>Ctrl + Shift + 8</span><span>選択単位で戻る</span><span>Ctrl + Shift + 9</span><span>選択単位で進む</span><span>Ctrl + Shift + 0</span><span>停止</span></div><p class="micro">ブラウザと対象タブを開いたまま使用してください。OS予約キーやDAWとの競合は別の組み合わせに変更。Webページ内のキー設定とグローバル設定は別です。メディアキー操作も対応環境で利用できます。</p><a href="./dtcue-extension.zip" download class="button-link">補助拡張をダウンロード</a><div class="dialog-footer"><button data-close="remoteDialog" class="primary">閉じる</button></div></dialog>
   <script type="module" src="./src/app.js"></script>
 </body></html>

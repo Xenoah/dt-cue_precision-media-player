@@ -10,6 +10,10 @@ ROOT = Path(__file__).resolve().parents[1]
 VERSION = json.loads((ROOT / 'package.json').read_text())['version']
 OUT = ROOT / 'release-assets'
 OUT.mkdir(exist_ok=True)
+for pattern in ('dt-cue-v*.zip', 'dt-cue-global-controls-v*.zip', 'dt-cue-*.jpg', 'SHA256SUMS.txt'):
+    for previous in OUT.glob(pattern):
+        if previous.is_file():
+            previous.unlink()
 
 
 def archive(path, files):

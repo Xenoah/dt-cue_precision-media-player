@@ -1,30 +1,148 @@
 {
   "manifest_version": 3,
   "name": "dt-cue Global Controls",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Control your selected dt-cue tab while working in a DAW. Click the extension once to connect the player.",
-  "permissions": ["activeTab", "scripting", "storage"],
-  "background": {"service_worker": "background.js", "type": "module"},
-  "action": {"default_title": "Connect this dt-cue tab / このタブを接続"},
-  "options_ui": {"page": "options.html", "open_in_tab": true},
+  "permissions": [
+    "activeTab",
+    "scripting",
+    "storage"
+  ],
+  "background": {
+    "service_worker": "background.js",
+    "type": "module"
+  },
+  "action": {
+    "default_title": "Connect this dt-cue tab / このタブを接続"
+  },
+  "options_ui": {
+    "page": "options.html",
+    "open_in_tab": true
+  },
   "commands": {
-    "toggle": {"suggested_key": {"default": "Ctrl+Shift+7"}, "description": "再生 / 一時停止", "global": true},
-    "step-back": {"suggested_key": {"default": "Ctrl+Shift+8"}, "description": "選択単位で戻る", "global": true},
-    "step-forward": {"suggested_key": {"default": "Ctrl+Shift+9"}, "description": "選択単位で進む", "global": true},
-    "stop": {"suggested_key": {"default": "Ctrl+Shift+0"}, "description": "停止して先頭へ", "global": true},
-    "start": {"description": "先頭へ", "global": true},
-    "second-back": {"description": "1秒戻る", "global": true},
-    "second-forward": {"description": "1秒進む", "global": true},
-    "frame-back": {"description": "1フレーム戻る", "global": true},
-    "frame-forward": {"description": "1フレーム進む", "global": true},
-    "ms-back": {"description": "1ms戻る", "global": true},
-    "ms-forward": {"description": "1ms進む", "global": true},
-    "set-a": {"description": "A点を設定", "global": true},
-    "set-b": {"description": "B点を設定", "global": true},
-    "loop": {"description": "A–Bループ切替", "global": true},
-    "audition": {"description": "0.5秒試聴", "global": true},
-    "mute": {"description": "ミュート", "global": true},
-    "volume-up": {"description": "音量を上げる", "global": true},
-    "volume-down": {"description": "音量を下げる", "global": true}
+    "toggle": {
+      "suggested_key": {
+        "default": "Ctrl+Shift+7"
+      },
+      "description": "再生 / 一時停止",
+      "global": true
+    },
+    "step-back": {
+      "suggested_key": {
+        "default": "Ctrl+Shift+8"
+      },
+      "description": "選択単位で戻る",
+      "global": true
+    },
+    "step-forward": {
+      "suggested_key": {
+        "default": "Ctrl+Shift+9"
+      },
+      "description": "選択単位で進む",
+      "global": true
+    },
+    "stop": {
+      "suggested_key": {
+        "default": "Ctrl+Shift+0"
+      },
+      "description": "停止して先頭へ",
+      "global": true
+    },
+    "start": {
+      "description": "先頭へ",
+      "global": true
+    },
+    "second-back": {
+      "description": "1秒戻る",
+      "global": true
+    },
+    "second-forward": {
+      "description": "1秒進む",
+      "global": true
+    },
+    "frame-back": {
+      "description": "1フレーム戻る",
+      "global": true
+    },
+    "frame-forward": {
+      "description": "1フレーム進む",
+      "global": true
+    },
+    "ms-back": {
+      "description": "1ms戻る",
+      "global": true
+    },
+    "ms-forward": {
+      "description": "1ms進む",
+      "global": true
+    },
+    "set-a": {
+      "description": "A点を設定",
+      "global": true
+    },
+    "set-b": {
+      "description": "B点を設定",
+      "global": true
+    },
+    "loop": {
+      "description": "A–Bループ切替",
+      "global": true
+    },
+    "audition": {
+      "description": "0.5秒試聴",
+      "global": true
+    },
+    "mute": {
+      "description": "ミュート",
+      "global": true
+    },
+    "volume-up": {
+      "description": "音量を上げる",
+      "global": true
+    },
+    "volume-down": {
+      "description": "音量を下げる",
+      "global": true
+    },
+    "pad-1": {
+      "description": "パッド 1（Web側で設定した操作）",
+      "global": true
+    },
+    "pad-2": {
+      "description": "パッド 2（Web側で設定した操作）",
+      "global": true
+    },
+    "pad-3": {
+      "description": "パッド 3（Web側で設定した操作）",
+      "global": true
+    },
+    "pad-4": {
+      "description": "パッド 4（Web側で設定した操作）",
+      "global": true
+    },
+    "pad-5": {
+      "description": "パッド 5（Web側で設定した操作）",
+      "global": true
+    },
+    "pad-6": {
+      "description": "パッド 6（Web側で設定した操作）",
+      "global": true
+    },
+    "pad-7": {
+      "description": "パッド 7（Web側で設定した操作）",
+      "global": true
+    },
+    "pad-8": {
+      "description": "パッド 8（Web側で設定した操作）",
+      "global": true
+    },
+    "pad-9": {
+      "description": "パッド 9（Web側で設定した操作）",
+      "global": true
+    },
+    "pad-10": {
+      "description": "パッド 10（Web側で設定した操作）",
+      "global": true
+    }
   }
 }

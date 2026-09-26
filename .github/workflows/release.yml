@@ -43,6 +43,6 @@ jobs:
           fi
           gh release create "$tag" release-assets/* \
             --target "$GITHUB_SHA" \
-            --title "dt-cue ${tag} — First release" \
+            --title "dt-cue ${tag}" \
             --notes-file "$notes" \
             --latest

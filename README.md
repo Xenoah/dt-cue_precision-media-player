@@ -23,14 +23,17 @@
 - 23.976〜120fpsのフレーム送り。フレーム操作では一時停止
 - A–Bループ、0.5秒の部分試聴、再生速度、音量、ミュート
 - AviUtl／After Effects／Premiereを参考にした3種類の配置
-- 再生操作18種類のキー割り当て・競合検出・設定保存
+- 鉛筆マークから操作を選んでキー／MIDIを割り当て。重複検出・割り当ての移動・設定保存
+- 10個のパフォーマンスパッド：HOT CUE、再生、シーク、ループなどへ自由に変更
+- MIDI入力（Note / CC）、MIDI Learn、入力機器の選択・抜き差し検出
+- 1／2／4／8ビートループ、1ビート移動、速度±1%、音量／速度のMIDI CC操作
 - LOW／MID／HIGHの3バンド波形、全体波形、ズーム、スクラブ
 - BPM推定、手入力、タップテンポ、倍／半分の補正、参考ビート線
 - ステレオのオシロスコープ、FFT、ライブピーク、ファイル全体のRMS／サンプルピーク
 - 動画の全画面・Picture-in-Picture（ブラウザ対応時）
 - DAW操作中のグローバルキー用Chrome／Edge拡張を同梱
 
-ファイルはブラウザ内だけで処理します。アップロード、解析サーバー、ログイン、外部CDNは使いません。ページの配信を除き、アプリと拡張はネットワーク通信を行いません。読み込んだファイル自体は保存されず、再読み込みすると再選択が必要です。キー・配置・FPS・移動量・音量だけをlocalStorageに保存します。
+ファイルはブラウザ内だけで処理します。アップロード、解析サーバー、ログイン、外部CDNは使いません。ページの配信を除き、アプリと拡張はネットワーク通信を行いません。読み込んだファイル自体は保存されず、再読み込みすると再選択が必要です。キー・MIDI割り当て・パッドの操作・選択したMIDI入力・配置・FPS・移動量・音量をlocalStorageに保存します。HOT CUE位置はファイルごとにメモリ内へ保持し、再読み込みで消去します。
 
 ## すぐ試す
 
@@ -77,7 +80,43 @@ npm start
 
 `package.json` のバージョンを更新してmainへpushすると、テストとパッケージ検証の後、そのバージョンのタグ・GitHub Release・配布ZIPを作成します。同じバージョンの公開済みリリースは上書きしません。リリースノートは `docs/releases/v<version>.md` に用意します。
 
-初回は **v0.1.0**。本体ZIP、Chrome／Edge補助拡張ZIP、画面スクリーンショット、SHA-256チェックサムを配布します。
+最新版は **v0.2.0**。本体ZIP、Chrome／Edge補助拡張ZIP、画面スクリーンショット、SHA-256チェックサムを配布します。v0.1.0の初回リリースも保持しています。
+
+## DJパッドとキー／MIDIマッピング
+
+10パッドの初期割り当ては **HOT CUE 1〜10**、キーボードは **1〜9、0** です。過去のキー設定と競合する場合は既存の割り当てを優先します。
+
+- 空のHOT CUEパッドを押すと現在位置を記録。もう一度押すと、その位置へ移動して再生します。CUE再生時は既存のA–Bループを解除します。
+- 「● 記録」をオンにしてHOT CUEパッドを押すと、現在位置で上書き。記録後はオフになります。
+- パッドを右クリック、または鉛筆を押してからクリックすると編集画面を開きます。「このCUEを削除」で位置を消去できます。
+- CUE位置はファイルごとに保持し、一覧で別ファイルへ切り替えて戻っても残ります。**ページの再読み込みでは消去**します。
+- パッドの操作は編集画面のプルダウンで変更。HOT CUEのほか、再生／停止、秒・フレーム・ms移動、試聴、ループ、音量、ビート移動、テンポ、波形、配置などを選べます。
+- 1／2／4／8ビートループは現在位置を起点としてBPMから区間長を計算します。ビート位置への自動吸着・量子化は行いません。
+
+### 鉛筆マークでキーを変更
+
+1. 上部の **鉛筆「キー / MIDI」** を押す。
+2. 点線で囲まれた操作やパッドをクリック。
+3. **キーを登録** を押して、好きなキー／修飾キーの組み合わせを入力。
+4. 編集画面を閉じ、上部の「完了」で演奏モードへ戻る。
+
+画面に専用ボタンがない操作も「割り当て一覧」で検索できます。重複があれば表示し、「移動して割り当て」で既存の操作から移せます。Escで入力待ちを中止。編集モード中はキーとMIDIによる演奏を停止します。音量／速度の連続値操作はMIDI CC専用で、キーは「音量＋／−」「速度±1%」へ割り当てます。OSやブラウザが予約する組み合わせは受け取れない場合があります。
+
+![Keyboard and MIDI mapping](docs/dt-cue-mapping.jpg)
+
+### MIDIコントローラー
+
+1. Web MIDI対応ブラウザで **HTTPSの公開版**、またはlocalhostを開く。
+2. 上部の「MIDI」→「MIDIを有効にする」でアクセスを許可。
+3. 鉛筆 → 操作／パッドをクリック → **MIDI Learn** → 機器のパッドやノブを操作。
+4. 編集を終了して使用。
+
+- Note On（velocity > 0）とCCを受信します。Note Off／velocity 0では操作しません。CCをボタン操作へ割り当てた場合は、値が64以上になった立ち上がりで1回実行します。
+- 音量スライダーと速度欄には絶対値CCを学習できます。音量は0〜100%、速度は50〜150%へ変換。相対エンコーダー方式は未対応です。
+- 機器ID・チャンネル・Note/CC番号を区別して保存。MIDI設定で入力を限定でき、切断・再接続も検出します。機器IDが変わった場合は学習し直してください。
+- 接続時だけアクセスを要求し、SysExは要求せず、MIDI出力も行いません。MIDIファイルの演奏、MIDIクロック同期、コントローラーのLED出力は含みません。
+- MIDIが非対応・不許可でもキーボードと画面操作を使えます。バックグラウンド入力はブラウザ・OS・機器に依存し、スリープしたタブは対象外です。
+- DAWが機器を排他利用している場合は共有・仮想ポート等の設定が必要です。**実MIDI機器と実DAWでの配送・遅延は未検証**です。
 
 ## DAWを操作しながら再生・シーク
 
@@ -96,7 +135,7 @@ npm start
 | Ctrl + Shift + 9 | 選択単位で進む |
 | Ctrl + Shift + 0 | 停止して先頭へ |
 
-その他の操作も拡張のショートカット設定で割り当て可能です。Web画面内のキー設定とは別の設定です。Chromeの仕様により、既定で提案できるキーは4つまで。OS予約キー・他拡張・DAWと競合する場合は別の組み合わせに変更します。キーの取りこぼしを避けるため、非アクティブ時の連打ではデコード完了を待ってください。
+その他の操作とパッド1〜10も拡張のショートカット設定で割り当て可能です。パッドはWeb側で選んだ操作を実行します。v0.1.0から更新する場合、拡張もv0.2.0へ更新し、対象タブへ再接続してください。Web画面内のキー設定とは別の設定です。Chromeの仕様により、既定で提案できるキーは4つまで。OS予約キー・他拡張・DAWと競合する場合は別の組み合わせに変更します。キーの取りこぼしを避けるため、非アクティブ時の連打ではデコード完了を待ってください。
 
 - Chrome／Edgeを起動し、対象タブを開いたまま使用します。タブの破棄・スリープ・ブラウザ終了時は利用できません。
 - タブの再読み込み・移動後は拡張アイコンを押して再接続します。
@@ -151,6 +190,8 @@ MP4／WebM／WAV／MP3など、実際に使える形式はブラウザのコー�
 
 ## 検証
 
+v0.2.0は自動テスト22件。MIDIは模擬入力で受信経路・学習・機器切断・権限拒否を検証しています。
+
 ```sh
 npm test
 ```
@@ -176,6 +217,8 @@ tools/serve.mjs    ローカル確認用サーバー
 
 ## 技術資料
 
+- [Web MIDI API specification](https://www.w3.org/TR/webmidi/)
+- [Chrome: Web MIDI permission](https://developer.chrome.com/blog/web-midi-permission-prompt)
 - [Chrome Extensions: Commands API](https://developer.chrome.com/docs/extensions/reference/api/commands)
 - [HTMLMediaElement.currentTime](https://developer.mozilla.org/en-US/docs/Web/API/HTMLMediaElement/currentTime)
 - [AudioBufferSourceNode.start](https://developer.mozilla.org/en-US/docs/Web/API/AudioBufferSourceNode/start)
@@ -189,3 +232,5 @@ dt-cue is a browser-based reference player for local audio and video files. It p
 Run `npm start`, then open `http://localhost:4173/`. Import the `extension/` folder as an unpacked Chromium extension for global controls, click its toolbar icon on dt-cue, and set command scope to Global. Only the explicitly selected tab is controlled. Reconnect after reloading.
 
 Audio uses decoded PCM where available. Video frame steps are FPS-based time seeks, not guaranteed frame-accurate decoding for VFR footage. BPM is an estimate, PCM rate may differ from the original source, large files may skip offline analysis, and global OS/DAW operation still requires real-device verification. No media is uploaded.
+
+Version 0.2.0 adds ten customizable performance pads, file-scoped session HOT CUEs, pencil-based keyboard/MIDI editing, MIDI Learn for Note/CC, beat loops and pitch-rate controls. Click MIDI to enable access, then pencil → target → MIDI Learn. MIDI bindings include port/channel/message type/number; absolute CC can control volume and rate. No SysEx, MIDI output, clock sync or relative encoders. Real MIDI hardware and DAW coexistence remain unverified.
